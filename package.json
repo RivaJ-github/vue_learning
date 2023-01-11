@@ -1,24 +1,23 @@
 {
   "name": "vue_learning",
   "version": "1.0.0",
+  "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "babel src --out-dir lib",
-    "dev": "node test/test.js",
-    "predev": "node test/beforetest.js",
-    "postdev": "node test/aftertest.js"
+    "start": "webpack --config webpack.config.js"
   },
-  "repository": "https://github.com/RivaJ-github/vue_learning.git",
-  "author": "jiangjiaqi <3110103518@zju.edu.cn>",
-  "license": "MIT",
-  "dependencies": {
-    "webpack-dev-server": "^4.11.1"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RivaJ-github/vue_learning.git"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RivaJ-github/vue_learning/issues"
+  },
+  "homepage": "https://github.com/RivaJ-github/vue_learning#readme",
   "devDependencies": {
-    "@babel/cli": "^7.20.7",
-    "@babel/core": "^7.20.12",
-    "@babel/polyfill": "^7.12.1",
-    "@babel/preset-env": "^7.20.2",
     "webpack": "^5.75.0",
     "webpack-cli": "^5.0.1"
   }
