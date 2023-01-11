@@ -7,7 +7,8 @@ const vnode = {
 function renderer(vnode, container) {
     if (typeof vnode.tag === 'string') {
         mountElement(vnode, container)
-    } else if (typeof vnode.tag === 'function') {
+    } else if (typeof vnode.tag === 'object') {
+        console.log(vnode.tag)
         mountComponent(vnode, container)
     }
 }
@@ -32,7 +33,8 @@ function mountElement(vnode, container) {
 }
 
 function mountComponent(vnode, container) {
-    const subtree = vnode.tag()
+    const subtree = vnode.tag.render()
+    console.log("####", subtree)
     renderer(subtree, container)
 }
 

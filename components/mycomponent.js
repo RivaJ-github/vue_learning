@@ -1,10 +1,12 @@
-const MyComponent = function () {
-    return {
-        tag: 'div',
-        props: {
-            onClick: () => alert('hello')
-        },
-        children: 'click me'
+const MyComponent = {
+    render() {
+        return {
+            tag: 'div',
+            props: {
+                onClick: () => alert('hello')
+            },
+            children: 'click me'
+        }
     }
 }
 
