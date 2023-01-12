@@ -53,7 +53,7 @@ function cleanup(effectFn) {
     effectFn.deps.length = 0
 }
 
-function effect(fn) {
+function effect(fn, options) {
     const effectFn = () => {
         cleanup(effectFn)
         activeEffect = effectFn
@@ -62,6 +62,7 @@ function effect(fn) {
         effectStack.pop()
         activeEffect = effectStack[effectStack.length - 1]
     }
+    effectFn.options = options
     effectFn.deps = []
     effectFn()
 }
@@ -85,12 +86,37 @@ function trigger(target, key) {
     if (!depsMap) return
     const effects = depsMap.get(key)
 
-    const effectsToRun = new Set(effects)
-    effectsToRun.forEach(fn => fn())
+    const effectsToRun = new Set()
+    effects && effects.forEach(effectFn => {
+        if (effectFn !== activeEffect) {
+            effectsToRun.add(effectFn)
+        }
+    })
+    effectsToRun.forEach(effectFn => {
+        if (effectFn.options.scheduler) {
+            effectFn.options.scheduler(effectFn)
+        } else {
+            effectFn()
+        }
+    })
+}
+
+const jobQueue = new Set()
+const p = Promise.resolve()
+
+let isFlushing = false
+function flushJob() {
+    if(isFlushing) return
+    isFlushing = true
+    p.then(() => {
+        jobQueue.forEach(job => job())
+    }).finally(() => {
+        isFlushing = false
+    })
 }
 
 
-const data = { foo: true, bar: true }
+const data = { foo: 1 }
 
 const obj = new Proxy(data, {
     get(target, key) {
@@ -103,16 +129,16 @@ const obj = new Proxy(data, {
     }
 })
 
-let temp1, temp2
-
-effect(function() {
-    console.log('effectFn1执行');
-
-    effect(function() {
-        console.log('effectFn2执行')
-        temp2 = obj.bar
-    })
-    temp1 = obj.foo
+effect(() => {
+    console.log(obj.foo)
+},
+{
+    scheduler(fn) {
+        jobQueue.add(fn)
+        flushJob()
+    }
 })
 
-obj.foo = false
+obj.foo++
+obj.foo++
+
