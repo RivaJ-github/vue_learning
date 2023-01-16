@@ -93,7 +93,6 @@ function trigger(target, key, type, newVal) {
     const depsMap = bucket.get(target)
     if (!depsMap) return
     const effects = depsMap.get(key)
-    const iterateEffects = depsMap.get(ITERATE_KEY)
 
     const effectsToRun = new Set()
     effects && effects.forEach(effectFn => {
@@ -101,7 +100,9 @@ function trigger(target, key, type, newVal) {
             effectsToRun.add(effectFn)
         }
     })
-    if (type === 'ADD' || type === 'DELETE') {
+    if (type === 'ADD' || type === 'DELETE' ||
+        (type === 'SET' && Object.prototype.toString.call(target) === '[object Map]')) {
+        const iterateEffects = depsMap.get(ITERATE_KEY)
         iterateEffects && iterateEffects.forEach(effectFn => {
             if (effectFn !== activeEffect) {
                 effectsToRun.add(effectFn)
@@ -246,11 +247,52 @@ const arrayInstrumentations = {
     }
 }
 const mutableInstrumentations = {
+    get(key) {
+        const target = this.raw
+        const had = target.has(key)
+        track(target, key)
+        if (had) {
+            const res = target.get(key)
+            return typeof res === 'object' ? reactive(res) : res
+        }
+    },
+    set(key, value) {
+        const target = this.raw
+        const had = target.has(key)
+        const oldValue = target.get(key)
+        const rawValue = value.raw || value
+        target.set(key, rawValue)
+        if (!had) {
+            trigger(target, key, 'ADD')
+        } else if (oldValue !== value || (oldValue === oldValue && value === value)) {
+            trigger(target, key, 'SET')
+        }
+    },
     add(key) {
         const target = this.raw
+        const hadKey = target.has(key)
         const res = target.add(key)
-        trigger(target, key, 'ADD')
+        if (!hadKey) {
+            trigger(target, key, 'ADD')
+        }
         return res
+    },
+    delete (key) {
+        const target = this.raw
+        const hadKey = target.has(key)
+        const res = target.delete(key)
+        if (hadKey) {
+            trigger(target, key, 'DELETE')
+        }
+        return res
+    },
+    forEach(callback) {
+        const warp = (val) => typeof val === 'object' ? reactive(val) : val
+        const target = this.raw
+        track(target, ITERATE_KEY)
+        target.forEach((v, k) => {
+            callback.call(thisArg, warp(v), warp(k), this)
+        })
     }
 }
 
@@ -356,10 +398,15 @@ function shallowReadonly(obj) {
     return createReactive(obj, true, true)
 }
 
-const p1 = reactive(new Set(1, 2, 3))
+const p1 = reactive(new Map([
+    [{key:1}, {value: 1}]
+]))
 
 effect(() => {
-    console.log(p1.size)
+    p1.forEach(function(value, key) {
+        console.log(value)
+        console.log(key)
+    })
 })
 
-p1.add(1)
+p1.set({key: 2}, {value: 2})
